@@ -14,3 +14,7 @@ starlette==0.41.3
 # (mcp.server.fastmcp). We use the SDK directly instead of the standalone
 # `fastmcp` package, whose v4 pulls starlette 1.x and breaks FastAPI.
 mcp==1.27.2
+
+# Chat orchestrator (chat/)
+anthropic==0.69.0
+python-dotenv==1.0.1
