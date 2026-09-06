@@ -49,8 +49,8 @@ vivo sobre el propio repo, y discusión de extensión a producción.
 - `get_qtd_estimate(ticker, kpi)` — última estimación QTD
 
 ## Plan de construcción (orden)
-1. [ ] Esquema Postgres a partir del CSV de ejemplo
-2. [ ] Capa de servicio (`core/`)
+1. [x] Esquema Postgres a partir del CSV de ejemplo
+2. [~] Capa de servicio (`core/`) — en progreso
 3. [ ] API REST FastAPI sobre el core
 4. [ ] Servidor MCP (FastMCP) con las 4 tools + errores + logging
 5. [ ] Orquestador de chat (Claude API tool-use como cliente MCP)
