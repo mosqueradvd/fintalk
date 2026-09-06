@@ -1,5 +1,9 @@
 # YipitData — Agent Platform Take-Home
 
+> **Enunciado completo:** `docs/take-home-assignment.md` (o el PDF original).
+> Este CLAUDE.md es un resumen de decisiones — ante cualquier duda sobre
+> requisitos exactos o criterios de evaluación, leer ese archivo primero.
+
 ## Objetivo
 App full-stack que sirve estimados trimestrales de KPIs de empresas públicas
 (históricos + QTD) a inversionistas, vía chat en lenguaje natural y vía un
@@ -45,7 +49,7 @@ vivo sobre el propio repo, y discusión de extensión a producción.
 - `get_qtd_estimate(ticker, kpi)` — última estimación QTD
 
 ## Plan de construcción (orden)
-1. [x] Esquema Postgres a partir del CSV de ejemplo
+1. [ ] Esquema Postgres a partir del CSV de ejemplo
 2. [ ] Capa de servicio (`core/`)
 3. [ ] API REST FastAPI sobre el core
 4. [ ] Servidor MCP (FastMCP) con las 4 tools + errores + logging
