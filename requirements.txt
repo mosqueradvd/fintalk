@@ -1,0 +1,3 @@
+# Shared service layer (core/)
+psycopg[binary]==3.2.13
+psycopg-pool==3.2.4
