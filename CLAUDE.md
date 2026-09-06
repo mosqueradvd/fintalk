@@ -1,5 +1,9 @@
 # YipitData — Agent Platform Take-Home
 
+> **Enunciado completo:** `docs/take-home-assignment.md` (o el PDF original).
+> Este CLAUDE.md es un resumen de decisiones — ante cualquier duda sobre
+> requisitos exactos o criterios de evaluación, leer ese archivo primero.
+
 ## Objetivo
 App full-stack que sirve estimados trimestrales de KPIs de empresas públicas
 (históricos + QTD) a inversionistas, vía chat en lenguaje natural y vía un
