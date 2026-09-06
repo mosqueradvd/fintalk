@@ -15,7 +15,9 @@ from dataclasses import asdict
 
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
+from chat import run_chat
 from core import (
     ServiceError,
     get_company_estimates,
@@ -86,3 +88,14 @@ def kpi_history(
 @app.get("/companies/{ticker}/qtd")
 def kpi_qtd(ticker: str, kpi: str = Query(...)) -> dict:
     return asdict(get_qtd_estimate(ticker, kpi))
+
+
+class ChatRequest(BaseModel):
+    question: str
+
+
+@app.post("/chat")
+async def chat(req: ChatRequest) -> dict:
+    """Natural-language Q&A. The LLM answers by calling the MCP tools;
+    the response includes the full tool-call trace for the UI panel."""
+    return asdict(await run_chat(req.question))
