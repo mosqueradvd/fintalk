@@ -1,35 +1,24 @@
 """Tool-call audit logging.
 
-Every MCP tool call is logged as one structured JSON line: tool name, args,
-outcome (ok/error), a short result summary, and latency. This is what lets us
-inspect agent behaviour after the fact (assignment requirement).
+Every MCP tool call is logged as one structured JSON line (tool, args, outcome,
+result summary, latency) so agent behaviour can be inspected after the fact.
 
-IMPORTANT: on a stdio MCP server, stdout carries the protocol. Audit logs go to
-stderr and to logs/mcp_audit.log — never stdout.
+Uses core.obs, so lines land on stderr, logs/app.log and the dedicated
+append-only logs/mcp_audit.log. stdout stays reserved for the MCP protocol.
 """
 
 from __future__ import annotations
 
 import functools
 import inspect
-import json
-import logging
 import time
 from datetime import date, datetime
-from pathlib import Path
 from typing import Any, Callable
 
 from core.errors import ServiceError
+from core.obs import get_logger, log_event
 
-_LOG_DIR = Path(__file__).resolve().parent.parent / "logs"
-_LOG_DIR.mkdir(exist_ok=True)
-
-logger = logging.getLogger("mcp.audit")
-if not logger.handlers:
-    logger.setLevel(logging.INFO)
-    logger.propagate = False  # don't double-log via the root/Rich handler
-    logger.addHandler(logging.StreamHandler())  # stderr
-    logger.addHandler(logging.FileHandler(_LOG_DIR / "mcp_audit.log"))
+_log = get_logger("mcp.audit", audit_file="mcp_audit.log")
 
 
 def _jsonable(obj: Any) -> Any:
@@ -47,14 +36,12 @@ def _summarize(result: Any) -> Any:
     if isinstance(result, list):
         return {"count": len(result)}
     if isinstance(result, dict):
-        if "error" in result:
-            return result
-        return {"keys": sorted(result.keys())}
+        return result if "error" in result else {"keys": sorted(result.keys())}
     return result
 
 
 def audited(fn: Callable) -> Callable:
-    """Decorator: log one JSON line per call of an MCP tool."""
+    """Decorator: log one audit line per MCP tool call."""
 
     sig = inspect.signature(fn)
 
@@ -67,23 +54,31 @@ def audited(fn: Callable) -> Callable:
             call_args = dict(bound.arguments)
         except TypeError:
             call_args = {"args": list(args), "kwargs": kwargs}
-        record: dict[str, Any] = {
-            "ts": datetime.now().isoformat(timespec="seconds"),
-            "tool": fn.__name__,
-            "args": _jsonable(call_args),
-        }
+
         try:
             result = fn(*args, **kwargs)
         except ServiceError as exc:  # tools normally catch these; log + re-raise
-            record["latency_ms"] = round((time.perf_counter() - started) * 1000, 1)
-            record.update(outcome="error", result=exc.to_dict())
-            logger.info(json.dumps(record))
+            log_event(
+                _log,
+                "tool_call",
+                tool=fn.__name__,
+                args=_jsonable(call_args),
+                outcome="error",
+                result=exc.to_dict(),
+                latency_ms=round((time.perf_counter() - started) * 1000, 1),
+            )
             raise
 
-        record["latency_ms"] = round((time.perf_counter() - started) * 1000, 1)
         outcome = "error" if isinstance(result, dict) and "error" in result else "ok"
-        record.update(outcome=outcome, result=_summarize(result))
-        logger.info(json.dumps(record))
+        log_event(
+            _log,
+            "tool_call",
+            tool=fn.__name__,
+            args=_jsonable(call_args),
+            outcome=outcome,
+            result=_summarize(result),
+            latency_ms=round((time.perf_counter() - started) * 1000, 1),
+        )
         return result
 
     return wrapper
