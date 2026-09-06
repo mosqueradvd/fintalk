@@ -1,6 +1,14 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { askChat, type ChatResult } from "./api";
 import { ToolCallPanel } from "./components/ToolCallPanel";
+import {
+  CheckIcon,
+  CloseIcon,
+  CopyIcon,
+  MoonIcon,
+  SparkIcon,
+  SunIcon,
+} from "./components/icons";
 
 interface Turn {
   question: string;
@@ -14,10 +22,39 @@ const SAMPLES = [
   "Which companies are in the Fintech sector?",
 ];
 
+type Theme = "light" | "dark";
+
+function initialTheme(): Theme {
+  try {
+    const saved = localStorage.getItem("fintalk-theme");
+    if (saved === "light" || saved === "dark") return saved;
+  } catch {
+    /* private mode / storage blocked — fall through */
+  }
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+}
+
 export default function App() {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [theme, setTheme] = useState<Theme>(initialTheme);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem("fintalk-theme", theme);
+    } catch {
+      /* ignore */
+    }
+  }, [theme]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+  }, [turns, loading]);
 
   async function send(question: string) {
     if (!question.trim() || loading) return;
@@ -37,13 +74,31 @@ export default function App() {
   }
 
   return (
-    <div className="app">
-      <header className="app__header">
-        <h1>FinTalk</h1>
-        <p>KPI estimates for public companies — ask in plain English.</p>
+    <div className="panel">
+      <header className="header">
+        <span className="header__mark">
+          <SparkIcon />
+        </span>
+        <h1 className="header__title">FinTalk</h1>
+        <span className="badge">Beta</span>
+        <span className="header__spacer" />
+        <button
+          className="icon-btn"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+        </button>
+        <button className="icon-btn" aria-label="Close" onClick={() => setTurns([])}>
+          <CloseIcon />
+        </button>
       </header>
 
-      <div className="conversation">
+      <div className="conversation" ref={scrollRef}>
+        <div className="bubble">
+          KPI estimates for public companies — ask in plain English.
+        </div>
+
         {turns.length === 0 && (
           <div className="samples">
             {SAMPLES.map((s) => (
@@ -56,23 +111,24 @@ export default function App() {
 
         {turns.map((turn, i) => (
           <div key={i} className="turn">
-            <div className="bubble bubble--user">{turn.question}</div>
+            <div className="bubble">{turn.question}</div>
             {turn.result && (
               <>
-                <div className="bubble bubble--assistant">
+                <div className="bubble answer">
                   {turn.result.answer}
                   <div className="bubble__model">{turn.result.model}</div>
+                  <div className="answer__toolbar">
+                    <CopyButton text={turn.result.answer} />
+                  </div>
                 </div>
                 <ToolCallPanel calls={turn.result.tool_calls} />
               </>
             )}
-            {turn.error && (
-              <div className="bubble bubble--error">{turn.error}</div>
-            )}
+            {turn.error && <div className="bubble bubble--error">{turn.error}</div>}
           </div>
         ))}
 
-        {loading && <div className="bubble bubble--assistant">…</div>}
+        {loading && <div className="bubble">…</div>}
       </div>
 
       <form
@@ -94,5 +150,25 @@ export default function App() {
         </button>
       </form>
     </div>
+  );
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      aria-label={copied ? "Copied" : "Copy response"}
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        } catch {
+          /* clipboard unavailable */
+        }
+      }}
+    >
+      {copied ? <CheckIcon /> : <CopyIcon />}
+    </button>
   );
 }
