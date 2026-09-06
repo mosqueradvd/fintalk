@@ -52,7 +52,7 @@ vivo sobre el propio repo, y discusión de extensión a producción.
 1. [x] Esquema Postgres a partir del CSV de ejemplo
 2. [x] Capa de servicio (`core/`)
 3. [x] API REST FastAPI sobre el core
-4. [ ] Servidor MCP (FastMCP) con las 4 tools + errores + logging
+4. [x] Servidor MCP (FastMCP) con las 4 tools + errores + logging
 5. [ ] Orquestador de chat (Claude API tool-use como cliente MCP)
 6. [ ] Frontend de chat (input + respuesta + panel de tool calls)
 7. [ ] Observabilidad + manejo de errores end-to-end
