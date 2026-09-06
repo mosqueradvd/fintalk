@@ -26,3 +26,7 @@ yarn-error.log*
 # Logs locales de auditoría de tool calls
 logs/
 *.log
+
+# Frontend
+node_modules/
+dist/
