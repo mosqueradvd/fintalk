@@ -56,13 +56,15 @@ vivo sobre el propio repo, y discusión de extensión a producción.
 5. [x] Orquestador de chat (Claude API tool-use como cliente MCP)
 6. [x] Frontend de chat (input + respuesta + panel de tool calls)
 7. [x] Observabilidad + manejo de errores end-to-end
-8. [ ] README (cómo correr, cómo conectar cliente MCP externo, decisiones,
+8. [x] README (cómo correr, cómo conectar cliente MCP externo, decisiones,
        mejoras futuras, sección de uso de IA) + diagrama de arquitectura
 
 ## Estado actual
-Aún no se ha escrito código. Este archivo se creó tras la sesión de
-planeación inicial. Actualizar la sección "Plan de construcción" marcando
-pasos completados a medida que avancemos.
+Los 8 pasos del plan están completos en `develop`. Tools MCP finales (5):
+`list_all_sectors`, `find_company`, `list_company_kpis`, `get_history`,
+`get_qtd`. Docs: `README.md`, `docs/architecture.md`, `docs/observability.md`,
+y un README por módulo. Tests: `pytest` (11, mock LLM + MCP/DB reales).
+Pendiente opcional: merge `develop` → `main` + tag de release.
 
 ## Para el README final (recordatorio)
 Incluir sección honesta de dónde se usó IA vs. dónde David decidió
