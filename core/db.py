@@ -31,6 +31,14 @@ def get_pool() -> ConnectionPool:
     return _pool
 
 
+def close_pool() -> None:
+    """Close the pool (call on app shutdown)."""
+    global _pool
+    if _pool is not None:
+        _pool.close()
+        _pool = None
+
+
 def query(sql: str, params: dict[str, Any] | tuple = ()) -> list[dict]:
     """Run a read query and return all rows as dicts."""
     with get_pool().connection() as conn:
