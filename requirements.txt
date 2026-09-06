@@ -6,3 +6,11 @@ psycopg-pool==3.2.4
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 httpx==0.28.1
+# FastAPI 0.115 needs starlette < 0.42; keep it pinned so a stray upgrade
+# (e.g. via the standalone `fastmcp` package) can't break the API.
+starlette==0.41.3
+
+# MCP server (mcp_server/) — FastMCP ships inside the official MCP SDK
+# (mcp.server.fastmcp). We use the SDK directly instead of the standalone
+# `fastmcp` package, whose v4 pulls starlette 1.x and breaks FastAPI.
+mcp==1.27.2
