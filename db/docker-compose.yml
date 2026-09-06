@@ -1,0 +1,16 @@
+# Postgres local para desarrollo. Levanta con:  docker compose -f db/docker-compose.yml up -d
+# Luego:  psql postgresql://fintalk:fintalk@localhost:5432/fintalk -f db/schema.sql
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: fintalk
+      POSTGRES_PASSWORD: fintalk
+      POSTGRES_DB: fintalk
+    ports:
+      - "5432:5432"
+    volumes:
+      - fintalk_pgdata:/var/lib/postgresql/data
+
+volumes:
+  fintalk_pgdata:
