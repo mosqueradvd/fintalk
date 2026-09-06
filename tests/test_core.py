@@ -29,6 +29,11 @@ def test_fuzzy_search_matches_by_partial_name():
     assert "STRM" in tickers  # StreamWave Entertainment
 
 
+def test_fuzzy_search_matches_by_sector():
+    results = search_companies("fintech")
+    assert results and results[0].sector == "Fintech"  # exact match ranks first
+
+
 def test_history_is_chronological_and_capped():
     hist = get_kpi_history("IGC", "Total Revenue ($MM)", quarters=4)
     assert len(hist.points) == 4

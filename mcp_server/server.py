@@ -25,6 +25,7 @@ from core import (
     get_kpi_history,
     get_qtd_estimate,
     list_kpis,
+    list_sectors,
     search_companies,
 )
 from core.config import DEFAULT_HISTORY_QUARTERS
@@ -35,11 +36,20 @@ mcp = FastMCP("fintalk")
 
 @mcp.tool()
 @audited
-def find_company(query: str) -> list[dict] | dict:
-    """Find public companies by name or ticker (fuzzy match).
+def list_all_sectors() -> list[str]:
+    """List every sector covered. Use this to answer "what sectors do you have?"
+    or before find_company when the user names a sector you want to confirm."""
+    return list_sectors()
 
-    Use this first when the user names a company. Returns up to 10 matches,
-    each with ticker, name and sector. Pass the ticker to the other tools.
+
+@mcp.tool()
+@audited
+def find_company(query: str) -> list[dict] | dict:
+    """Find public companies by name, ticker, or sector (fuzzy match).
+
+    Use this first when the user names a company OR a sector (e.g. "fintech
+    companies"). Returns up to 10 matches, each with ticker, name and sector.
+    Pass the ticker to the other tools.
     """
     matches = search_companies(query)
     if not matches:
