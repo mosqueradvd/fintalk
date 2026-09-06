@@ -159,6 +159,19 @@ policy per layer: [docs/observability.md](docs/observability.md).
 
 ---
 
+## Security review
+
+[SECURITY.md](SECURITY.md) — OWASP Top 10 for LLM Applications (2025) plus a
+light STRIDE pass over the LLM↔MCP↔Core↔DB boundary, each finding anchored to
+code. Small mitigations were applied inline (LIKE-wildcard scoping on lookups,
+single-quarter scoping for QTD, `quarters` clamped in `core/`, a `question`
+length cap); larger items (auth, read-only DB role, rate limiting, moving
+QoQ/YoY math into `core/`) are listed there as production work.
+[docs/audit-report.md](docs/audit-report.md) covers the matching
+performance / integrity / MCP-conformance review.
+
+---
+
 ## Future improvements
 
 - **`compare_qtd_vs_prior_quarter` tool.** "QTD vs last quarter" currently needs
@@ -221,7 +234,7 @@ mcp_server/   FastMCP server (5 tools) + tool-call audit
 chat/         chat orchestrator — real MCP client + Claude tool-use loop
 frontend/     Vite + React SPA (chat + tool-call panel)
 db/           schema.sql, CSV loader, docker-compose
-docs/         assignment, architecture, observability
+docs/         assignment, architecture, observability, audit-report
 tests/        pytest (mock LLM, real MCP + DB)
 ```
 

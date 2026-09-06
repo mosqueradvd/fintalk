@@ -9,7 +9,12 @@ Design notes:
 
 from __future__ import annotations
 
-from .config import DEFAULT_HISTORY_QUARTERS, FUZZY_MATCH_THRESHOLD
+from .config import (
+    DEFAULT_HISTORY_QUARTERS,
+    FUZZY_MATCH_THRESHOLD,
+    MAX_HISTORY_QUARTERS,
+    MIN_HISTORY_QUARTERS,
+)
 from .db import query, query_one
 from .errors import CompanyNotFound, KpiNotFound
 from .models import (
@@ -22,6 +27,29 @@ from .models import (
     QtdSnapshot,
     QuarterPoint,
 )
+
+# --------------------------------------------------------------------------- #
+# Helpers
+# --------------------------------------------------------------------------- #
+
+
+def _like_escape(value: str) -> str:
+    """Escape LIKE/ILIKE wildcards in *user- or LLM-supplied* text.
+
+    Params are already sent parameterized (no SQL injection), but ``%`` and
+    ``_`` are still wildcards *inside the value*: without this, ``find_company``
+    for ``"%"`` matches every row and a resolve for ``"AC_E"`` matches any
+    character. We pair this with ``ESCAPE '\\'`` in the query. (OWASP LLM06)
+    """
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def _clamp_quarters(quarters: int | None) -> int | None:
+    """Bound the history window. ``None`` means "all" and is left as-is."""
+    if quarters is None:
+        return None
+    return max(MIN_HISTORY_QUARTERS, min(MAX_HISTORY_QUARTERS, int(quarters)))
+
 
 # --------------------------------------------------------------------------- #
 # Discovery
@@ -46,9 +74,9 @@ def search_companies(q: str, limit: int = 10) -> list[Company]:
                         similarity(ticker, %(q)s),
                         similarity(sector, %(q)s)) AS score
         FROM companies
-        WHERE name ILIKE %(like)s
-           OR ticker ILIKE %(like)s
-           OR sector ILIKE %(like)s
+        WHERE name ILIKE %(like)s ESCAPE '\'
+           OR ticker ILIKE %(like)s ESCAPE '\'
+           OR sector ILIKE %(like)s ESCAPE '\'
            OR similarity(name, %(q)s) > %(threshold)s
            OR similarity(ticker, %(q)s) > %(threshold)s
            OR similarity(sector, %(q)s) > %(threshold)s
@@ -57,7 +85,7 @@ def search_companies(q: str, limit: int = 10) -> list[Company]:
         """,
         {
             "q": q,
-            "like": f"%{q}%",
+            "like": f"%{_like_escape(q)}%",
             "threshold": FUZZY_MATCH_THRESHOLD,
             "limit": limit,
         },
@@ -69,7 +97,7 @@ def list_companies(sector: str | None = None) -> list[Company]:
     if sector:
         rows = query(
             "SELECT ticker, name, sector FROM companies "
-            "WHERE sector ILIKE %s ORDER BY name",
+            "WHERE lower(sector) = lower(%s) ORDER BY name",
             (sector,),
         )
     else:
@@ -84,7 +112,7 @@ def list_companies(sector: str | None = None) -> list[Company]:
 
 def _resolve_company(ticker: str) -> Company:
     row = query_one(
-        "SELECT ticker, name, sector FROM companies WHERE ticker ILIKE %s",
+        "SELECT ticker, name, sector FROM companies WHERE lower(ticker) = lower(%s)",
         (ticker,),
     )
     if row:
@@ -105,7 +133,7 @@ def _resolve_kpi(company: Company, kpi_name: str) -> tuple[int, Kpi]:
         SELECT k.id, k.name, k.unit
         FROM kpis k
         JOIN companies c ON c.id = k.company_id
-        WHERE c.ticker = %s AND k.name ILIKE %s
+        WHERE c.ticker = %s AND lower(k.name) = lower(%s)
         """,
         (company.ticker, kpi_name),
     )
@@ -142,7 +170,12 @@ def list_kpis(ticker: str) -> list[Kpi]:
 def get_kpi_history(
     ticker: str, kpi: str, quarters: int | None = DEFAULT_HISTORY_QUARTERS
 ) -> KpiHistory:
-    """Quarterly history, most recent ``quarters`` (or all when ``quarters`` is None)."""
+    """Quarterly history, most recent ``quarters`` (or all when ``quarters`` is None).
+
+    ``quarters`` is clamped to ``[MIN_HISTORY_QUARTERS, MAX_HISTORY_QUARTERS]``
+    here so both the REST API and the (LLM-driven) MCP tool inherit the bound.
+    """
+    quarters = _clamp_quarters(quarters)
     company = _resolve_company(ticker)
     kpi_id, kpi_obj = _resolve_kpi(company, kpi)
 
@@ -169,14 +202,22 @@ def get_qtd_estimate(ticker: str, kpi: str) -> QtdEstimate:
     company = _resolve_company(ticker)
     kpi_id, kpi_obj = _resolve_kpi(company, kpi)
 
+    # QTD is a *single quarter* concept: the snapshot series for the quarter
+    # currently in progress. The table can hold rows for several quarters
+    # (this quarter's plus retained prior ones), so scope to the most recent
+    # fiscal quarter for this KPI — otherwise "latest" and the snapshot series
+    # would silently mix quarters. (OWASP LLM09 — Misinformation)
     rows = query(
         """
         SELECT fiscal_quarter, as_of_date, value
         FROM qtd_estimates
         WHERE kpi_id = %s
+          AND fiscal_quarter = (
+              SELECT max(fiscal_quarter) FROM qtd_estimates WHERE kpi_id = %s
+          )
         ORDER BY as_of_date ASC
         """,
-        (kpi_id,),
+        (kpi_id, kpi_id),
     )
     if not rows:
         raise KpiNotFound(

@@ -16,7 +16,7 @@ from dataclasses import asdict
 
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from chat import run_chat
 from core import (
@@ -135,8 +135,14 @@ def kpi_qtd(ticker: str, kpi: str = Query(...)) -> dict:
     return asdict(get_qtd_estimate(ticker, kpi))
 
 
+# A single investor question is a sentence or two. Cap the input so a caller
+# can't push a huge prompt into the model (token cost) or into the logs.
+# (OWASP LLM10 — Unbounded Consumption)
+MAX_QUESTION_CHARS = 2000
+
+
 class ChatRequest(BaseModel):
-    question: str
+    question: str = Field(min_length=1, max_length=MAX_QUESTION_CHARS)
 
 
 @app.post("/chat")

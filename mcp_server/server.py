@@ -1,6 +1,6 @@
 """FinTalk MCP server.
 
-Exposes 4 tools over the shared core/ layer. Same process boundary as the REST
+Exposes 5 tools over the shared core/ layer. Same process boundary as the REST
 API in terms of logic (both import core/), but this runs standalone over stdio
 so external AI clients (Claude Desktop, Cursor) can connect.
 
@@ -82,7 +82,8 @@ def get_history(
     """Quarterly historical estimates for one KPI (most recent `quarters`).
 
     `kpi` must be an exact KPI name from list_company_kpis. On a miss the
-    response lists the valid KPI names in `suggestions`.
+    response lists the valid KPI names in `suggestions`. `quarters` is clamped
+    to 1..40 server-side.
     """
     try:
         return asdict(get_kpi_history(ticker, kpi, quarters=quarters))

@@ -13,7 +13,7 @@ from core import (
     list_kpis,
     search_companies,
 )
-from core.db import query
+from core.db import query, query_one
 
 try:
     query("SELECT 1")
@@ -45,6 +45,34 @@ def test_qtd_returns_latest_snapshot_last():
     qtd = get_qtd_estimate("IGC", "Total Revenue ($MM)")
     assert qtd.latest.as_of_date == qtd.snapshots[-1].as_of_date
     assert qtd.latest.as_of_date >= qtd.snapshots[0].as_of_date
+
+
+def test_history_quarters_is_clamped_to_max():
+    # Ask for far more than the cap; core must not return an unbounded window.
+    hist = get_kpi_history("IGC", "Total Revenue ($MM)", quarters=10_000)
+    assert len(hist.points) <= 40
+
+
+def test_like_wildcards_do_not_resolve_a_company():
+    # '%' / '_' are LIKE metacharacters; they must not match an arbitrary row.
+    with pytest.raises(CompanyNotFound):
+        list_kpis("%")
+    with pytest.raises(CompanyNotFound):
+        list_kpis("_GC")
+
+
+def test_qtd_is_scoped_to_one_fiscal_quarter():
+    qtd = get_qtd_estimate("IGC", "Total Revenue ($MM)")
+    quarters = {
+        query_one(
+            "SELECT fiscal_quarter FROM qtd_estimates "
+            "WHERE as_of_date = %s LIMIT 1",
+            (s.as_of_date,),
+        )["fiscal_quarter"]
+        for s in qtd.snapshots
+    }
+    assert len(quarters) == 1
+    assert qtd.fiscal_quarter in quarters
 
 
 def test_unknown_company_raises_with_suggestions():

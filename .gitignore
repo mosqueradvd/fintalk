@@ -23,6 +23,9 @@ yarn-error.log*
 .idea/
 .DS_Store
 
+# Claude Code: config/permisos locales por-usuario (launch.json y skills SÍ se versionan)
+.claude/settings.local.json
+
 # Logs locales de auditoría de tool calls
 logs/
 *.log
