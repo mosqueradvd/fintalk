@@ -54,7 +54,7 @@ vivo sobre el propio repo, y discusión de extensión a producción.
 3. [x] API REST FastAPI sobre el core
 4. [x] Servidor MCP (FastMCP) con las 4 tools + errores + logging
 5. [x] Orquestador de chat (Claude API tool-use como cliente MCP)
-6. [ ] Frontend de chat (input + respuesta + panel de tool calls)
+6. [x] Frontend de chat (input + respuesta + panel de tool calls)
 7. [ ] Observabilidad + manejo de errores end-to-end
 8. [ ] README (cómo correr, cómo conectar cliente MCP externo, decisiones,
        mejoras futuras, sección de uso de IA) + diagrama de arquitectura

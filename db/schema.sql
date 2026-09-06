@@ -48,6 +48,7 @@ CREATE TABLE companies (
 -- para la búsqueda difusa sin escaneo completo de tabla.
 CREATE INDEX idx_companies_name_trgm   ON companies USING gin (name gin_trgm_ops);
 CREATE INDEX idx_companies_ticker_trgm ON companies USING gin (ticker gin_trgm_ops);
+CREATE INDEX idx_companies_sector_trgm ON companies USING gin (sector gin_trgm_ops);
 
 -- -----------------------------------------------------------------------------
 -- kpis  (un KPI pertenece a una empresa)

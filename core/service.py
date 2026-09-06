@@ -34,17 +34,24 @@ def list_sectors() -> list[str]:
 
 
 def search_companies(q: str, limit: int = 10) -> list[Company]:
-    """Fuzzy search by name or ticker (substring match OR trigram similarity)."""
+    """Fuzzy search by name, ticker or sector (substring OR trigram similarity).
+
+    Sector is included so a query like "fintech" returns that sector's
+    companies — the natural way an investor narrows down.
+    """
     rows = query(
         """
         SELECT ticker, name, sector,
                GREATEST(similarity(name, %(q)s),
-                        similarity(ticker, %(q)s)) AS score
+                        similarity(ticker, %(q)s),
+                        similarity(sector, %(q)s)) AS score
         FROM companies
         WHERE name ILIKE %(like)s
            OR ticker ILIKE %(like)s
+           OR sector ILIKE %(like)s
            OR similarity(name, %(q)s) > %(threshold)s
            OR similarity(ticker, %(q)s) > %(threshold)s
+           OR similarity(sector, %(q)s) > %(threshold)s
         ORDER BY score DESC, name ASC
         LIMIT %(limit)s
         """,
