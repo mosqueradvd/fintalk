@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+npm-debug.log*
+yarn-error.log*
+
+# DB
+*.dump
+
+# Editores / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Logs locales de auditoría de tool calls
+logs/
+*.log
