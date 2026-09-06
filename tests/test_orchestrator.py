@@ -57,6 +57,18 @@ async def test_iteration_limit_is_enforced():
     assert "tool-call limit" in res.answer
 
 
+async def test_llm_failure_returns_graceful_result_not_exception():
+    class BoomLLM:
+        model = "boom"
+
+        def create(self, **_):
+            raise RuntimeError("simulated Anthropic outage")
+
+    res = await run_chat("anything", llm=BoomLLM())
+    assert "internal error" in res.answer.lower()
+    assert res.model == "boom"
+
+
 def test_extract_tool_payload_unwraps_structured_list():
     class R:
         structuredContent = {"result": [{"a": 1}, {"a": 2}]}

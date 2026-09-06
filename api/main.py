@@ -10,6 +10,7 @@ All data logic lives in core/. Handlers are one-liners on purpose.
 
 from __future__ import annotations
 
+import time
 from contextlib import asynccontextmanager
 from dataclasses import asdict
 
@@ -29,6 +30,9 @@ from core import (
     search_companies,
 )
 from core.db import close_pool, get_pool
+from core.obs import get_logger, log_event, new_request_id, request_id_var
+
+_log = get_logger("api")
 
 
 @asynccontextmanager
@@ -41,9 +45,50 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="FinTalk API", version="0.1.0", lifespan=lifespan)
 
 
+@app.middleware("http")
+async def _observe(request: Request, call_next):
+    """Assign a request id, time the request, log one access line, echo the id."""
+    rid = request.headers.get("x-request-id") or new_request_id()
+    token = request_id_var.set(rid)
+    started = time.perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        log_event(
+            _log, "http_unhandled", method=request.method, path=request.url.path
+        )
+        _log.exception("http_unhandled")
+        response = JSONResponse(
+            status_code=500,
+            content={"error": "internal_error", "message": "unexpected server error"},
+        )
+    log_event(
+        _log,
+        "http_request",
+        method=request.method,
+        path=request.url.path,
+        status=response.status_code,
+        latency_ms=round((time.perf_counter() - started) * 1000, 1),
+    )
+    response.headers["x-request-id"] = rid
+    request_id_var.reset(token)
+    return response
+
+
 @app.exception_handler(ServiceError)
 async def _service_error_handler(_: Request, exc: ServiceError) -> JSONResponse:
+    log_event(_log, "service_error", code=exc.code, message=exc.message)
     return JSONResponse(status_code=exc.http_status, content=exc.to_dict())
+
+
+@app.exception_handler(Exception)
+async def _unhandled_handler(request: Request, exc: Exception) -> JSONResponse:
+    log_event(_log, "unhandled_exception", path=request.url.path, error=str(exc))
+    _log.exception("unhandled_exception")
+    return JSONResponse(
+        status_code=500,
+        content={"error": "internal_error", "message": "unexpected server error"},
+    )
 
 
 @app.get("/health")
