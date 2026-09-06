@@ -1,12 +1,71 @@
+/* ---------------------------------------------------------------------------
+   FinTalk chat — design system
+   One palette, two themes. Light is the default; dark is applied either by the
+   OS (prefers-color-scheme) or by an explicit [data-theme] on <html> set from
+   the header toggle. Every color is a token so both themes stay in sync.
+--------------------------------------------------------------------------- */
+
 :root {
-  --bg: #0f1115;
-  --panel: #181b22;
-  --border: #2a2f3a;
-  --text: #e6e8ec;
-  --muted: #9aa3b2;
-  --accent: #4c8bf5;
-  --error: #e0555f;
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  /* light theme */
+  --bg: #ecebe7;          /* room behind the floating panel */
+  --surface: #fbfbfa;     /* the panel itself */
+  --bubble: #f3f3f4;      /* every message bubble, user + assistant */
+  --bubble-border: rgba(20, 20, 25, 0.06);
+  --text: #1b1b1b;
+  --muted: #6a7180;
+  --accent: #2f6fe0;      /* links, tool names */
+  --divider: rgba(20, 20, 25, 0.08);
+  --error: #c8483f;
+  --error-bg: rgba(200, 72, 63, 0.08);
+
+  /* shared across themes */
+  --badge-bg: #ecebfb;
+  --badge-text: #4b45c6;
+  --brand-gradient: linear-gradient(135deg, #5b93f5 0%, #7a6ff0 100%);
+  --shadow: 0 24px 60px -20px rgba(20, 20, 30, 0.28);
+
+  --radius-panel: 26px;
+  --radius-bubble: 15px;
+  --radius-input: 18px;
+  --radius-card: 14px;
+
+  color-scheme: light;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1b1b1d;
+    --surface: #0b0b0c;
+    --bubble: #202024;
+    --bubble-border: rgba(255, 255, 255, 0.06);
+    --text: #f4f4f5;
+    --muted: #9aa1ad;
+    --accent: #5b93f5;
+    --divider: rgba(255, 255, 255, 0.08);
+    --error: #f08379;
+    --error-bg: rgba(240, 131, 121, 0.1);
+    --shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #1b1b1d;
+  --surface: #0b0b0c;
+  --bubble: #202024;
+  --bubble-border: rgba(255, 255, 255, 0.06);
+  --text: #f4f4f5;
+  --muted: #9aa1ad;
+  --accent: #5b93f5;
+  --divider: rgba(255, 255, 255, 0.08);
+  --error: #f08379;
+  --error-bg: rgba(240, 131, 121, 0.1);
+  --shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
 }
 
 * {
@@ -15,50 +74,114 @@
 
 body {
   margin: 0;
+  min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-}
-
-.app {
-  max-width: 760px;
-  margin: 0 auto;
-  min-height: 100vh;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 24px 16px;
 }
 
-.app__header h1 {
+/* --- floating panel ------------------------------------------------------ */
+
+.panel {
+  width: 100%;
+  max-width: 452px;
+  height: min(82vh, 720px);
+  background: var(--surface);
+  border: 1px solid var(--bubble-border);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* --- header ------------------------------------------------------------- */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px 14px;
+}
+
+.header__mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--brand-gradient);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.header__title {
   margin: 0;
-  font-size: 22px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
-.app__header p {
-  margin: 4px 0 0;
+
+.badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--badge-text);
+  background: var(--badge-bg);
+  border-radius: 999px;
+  padding: 3px 7px;
+}
+
+.header__spacer {
+  flex: 1;
+}
+
+.icon-btn {
+  border: 0;
+  background: transparent;
   color: var(--muted);
-  font-size: 14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
 }
+.icon-btn:hover {
+  color: var(--text);
+  background: var(--bubble);
+}
+
+/* --- conversation ----------------------------------------------------- */
 
 .conversation {
   flex: 1;
+  overflow-y: auto;
+  padding: 6px 18px 18px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 20px 0;
+  gap: 10px;
 }
 
 .samples {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-top: 4px;
 }
 .samples button {
   text-align: left;
-  background: var(--panel);
+  background: var(--bubble);
   color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 12px;
+  border: 1px solid var(--bubble-border);
+  border-radius: var(--radius-bubble);
+  padding: 11px 14px;
   cursor: pointer;
+  font: inherit;
   font-size: 14px;
 }
 .samples button:hover {
@@ -68,127 +191,200 @@ body {
 .turn {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
+/* every message — user and assistant — shares this bubble */
 .bubble {
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 14px;
-  line-height: 1.5;
+  align-self: flex-start;
+  max-width: 88%;
+  background: var(--bubble);
+  border: 1px solid var(--bubble-border);
+  border-radius: var(--radius-bubble);
+  padding: 11px 14px;
+  font-size: 14.5px;
+  line-height: 1.55;
   white-space: pre-wrap;
-  max-width: 90%;
+  word-break: break-word;
 }
-.bubble--user {
-  align-self: flex-end;
-  background: var(--accent);
-  color: white;
-}
-.bubble--assistant {
-  align-self: flex-start;
-  background: var(--panel);
-  border: 1px solid var(--border);
-}
+
 .bubble--error {
-  align-self: flex-start;
-  background: rgba(224, 85, 95, 0.12);
-  border: 1px solid var(--error);
+  background: var(--error-bg);
+  border-color: var(--error);
   color: var(--error);
 }
+
 .bubble__model {
   margin-top: 6px;
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--muted);
 }
 
-.tool-panel {
+/* hover affordance on assistant answers */
+.answer {
+  position: relative;
+}
+.answer__toolbar {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: #1f1f22;
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  pointer-events: none;
+}
+.answer:hover .answer__toolbar,
+.answer:focus-within .answer__toolbar {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.answer__toolbar button {
+  border: 0;
+  background: transparent;
+  color: #c8c9ce;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.answer__toolbar button:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* --- tool-call card --------------------------------------------------- */
+
+.tools {
   align-self: stretch;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px;
-}
-.tool-panel__title {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-  margin-bottom: 8px;
-}
-
-.tool-call {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  margin-bottom: 6px;
+  background: var(--bubble);
+  border: 1px solid var(--bubble-border);
+  border-radius: var(--radius-card);
   overflow: hidden;
 }
-.tool-call--error {
-  border-color: var(--error);
+.tools__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 10px 14px 8px;
 }
-.tool-call__head {
-  width: 100%;
+
+.tool-row {
   display: flex;
   gap: 10px;
-  align-items: baseline;
-  background: transparent;
-  border: 0;
-  color: var(--text);
-  padding: 8px 10px;
-  cursor: pointer;
+  padding: 10px 14px;
+  border-top: 1px solid var(--divider);
   font-size: 13px;
+  line-height: 1.45;
   text-align: left;
+  width: 100%;
+  background: transparent;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
 }
-.tool-call__name {
-  font-weight: 600;
-  color: var(--accent);
+.tool-row:hover {
+  background: var(--divider);
 }
-.tool-call__args {
-  flex: 1;
+.tool-row__icon {
   color: var(--muted);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.tool-row__icon--error {
+  color: var(--error);
+}
+.tool-row__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tool-row__line {
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
-.tool-call__meta {
+.tool-row__name {
+  font-weight: 700;
+}
+.tool-row__args {
   color: var(--muted);
-  font-size: 12px;
 }
-.tool-call__result {
+.tool-row__meta {
+  color: var(--muted);
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+.tool-row__result {
   margin: 0;
-  padding: 10px;
-  background: #0c0e12;
-  border-top: 1px solid var(--border);
-  font-size: 12px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-top: 1px solid var(--divider);
+  font-size: 11.5px;
+  line-height: 1.5;
   overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+/* --- composer ------------------------------------------------------- */
 
 .composer {
   display: flex;
   gap: 8px;
-  position: sticky;
-  bottom: 0;
-  background: var(--bg);
-  padding-top: 8px;
+  padding: 12px 18px 18px;
+  border-top: 1px solid var(--divider);
 }
 .composer input {
   flex: 1;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 12px;
+  background: var(--bubble);
+  border: 1px solid var(--bubble-border);
+  border-radius: var(--radius-input);
+  padding: 11px 15px;
   color: var(--text);
-  font-size: 14px;
+  font: inherit;
+  font-size: 14.5px;
+}
+.composer input::placeholder {
+  color: var(--muted);
+}
+.composer input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 .composer button {
   background: var(--accent);
-  color: white;
+  color: #fff;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-input);
   padding: 0 18px;
+  font: inherit;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
 }
 .composer button:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: default;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
 }

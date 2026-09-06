@@ -1,13 +1,18 @@
 import { useState } from "react";
 import type { ToolCall } from "../api";
+import { ToolIcon } from "./icons";
 
-// Shows what the agent actually did: which tools, with what args, and the
-// raw result. This is the "visibility into tool calls" the assignment asks for.
+// Agent transparency: one row per tool the agent called, name in bold and the
+// arguments rendered as a plain readable trail. Click a row to see the raw
+// result. Rows stack with a hairline divider, mirroring the reference's
+// "recommended actions" card.
 export function ToolCallPanel({ calls }: { calls: ToolCall[] }) {
   if (calls.length === 0) return null;
   return (
-    <div className="tool-panel">
-      <div className="tool-panel__title">Tool calls ({calls.length})</div>
+    <div className="tools">
+      <div className="tools__title">
+        Tool calls · {calls.length}
+      </div>
       {calls.map((c, i) => (
         <ToolCallRow key={i} call={c} />
       ))}
@@ -15,26 +20,45 @@ export function ToolCallPanel({ calls }: { calls: ToolCall[] }) {
   );
 }
 
+// "IGC · Total Revenue · 8" — just the values, in call order.
+function summarizeArgs(args: Record<string, unknown>): string {
+  return Object.values(args)
+    .map((v) => (typeof v === "string" ? v : JSON.stringify(v)))
+    .join("  ·  ");
+}
+
 function ToolCallRow({ call }: { call: ToolCall }) {
   const [open, setOpen] = useState(false);
+  const args = summarizeArgs(call.args);
   return (
-    <div className={`tool-call ${call.ok ? "" : "tool-call--error"}`}>
-      <button className="tool-call__head" onClick={() => setOpen(!open)}>
-        <span className="tool-call__name">{call.name}</span>
-        <span className="tool-call__args">
-          {Object.entries(call.args)
-            .map(([k, v]) => `${k}=${JSON.stringify(v)}`)
-            .join(", ")}
+    <>
+      <button
+        className="tool-row"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+      >
+        <span
+          className={
+            "tool-row__icon" + (call.ok ? "" : " tool-row__icon--error")
+          }
+        >
+          <ToolIcon />
         </span>
-        <span className="tool-call__meta">
-          {call.ok ? "ok" : "error"} · {call.latency_ms}ms
+        <span className="tool-row__body">
+          <span className="tool-row__line">
+            <span className="tool-row__name">{call.name}</span>
+            {args && <span className="tool-row__args"> · {args}</span>}
+          </span>
+          <span className="tool-row__meta">
+            {call.ok ? "returned" : "error"} in {call.latency_ms} ms
+          </span>
         </span>
       </button>
       {open && (
-        <pre className="tool-call__result">
+        <pre className="tool-row__result">
           {JSON.stringify(call.result, null, 2)}
         </pre>
       )}
-    </div>
+    </>
   );
 }
