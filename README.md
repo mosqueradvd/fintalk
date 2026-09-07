@@ -96,15 +96,23 @@ cd frontend && npm install && npm run dev      # http://localhost:5173
 python -m mcp_server.server                     # stdio transport
 ```
 
-### Tests
+### Tests & evals
 
 ```bash
 pip install -r requirements-dev.txt
-pytest            # 11 tests; skip automatically if Postgres is down
+make test          # 16 unit tests; skip automatically if Postgres is down
+make eval          # behavioural evals — real model + tools (needs ANTHROPIC_API_KEY, ~$0.05)
 ```
 
-Tests use a **scripted mock LLM** — no API calls, deterministic — but run
-against the **real MCP server subprocess** and the sample DB.
+Two layers, on purpose:
+
+- **`make test`** — plumbing. Scripted mock LLM (no API cost, deterministic),
+  but the **real** MCP server subprocess and sample DB.
+- **`make eval`** — behaviour. The real orchestrator + real model
+  (`temperature=0`) against the sample DB: does a plain-English question hit
+  the right tools and report the right number? Prints pass-rate, tool
+  precision, and cost/latency per case; non-zero exit can gate a deploy.
+  See [evals/README.md](evals/README.md).
 
 ---
 
@@ -153,6 +161,11 @@ whole `/chat` tool-use loop. Two surfaces:
 
 - `logs/app.log` — everything (HTTP access, chat lifecycle, errors + tracebacks)
 - `logs/mcp_audit.log` — append-only tool-call audit (works for any MCP client)
+
+Every `chat_completed` line carries **token spend** for the turn —
+`llm_calls`, `input_tokens`, `output_tokens`, `cost_usd`
+(`chat/pricing.py`; also on `ChatResult.usage`). Internal signal for cost
+dashboards and the eval harness, not shown to end users.
 
 Details, an example trace showing LLM error-recovery, and the error-handling
 policy per layer: [docs/observability.md](docs/observability.md).
@@ -236,6 +249,7 @@ frontend/     Vite + React SPA (chat + tool-call panel)
 db/           schema.sql, CSV loader, docker-compose
 docs/         assignment, architecture, observability, audit-report
 tests/        pytest (mock LLM, real MCP + DB)
+evals/        behavioural evals (real model + tools)
 ```
 
 Branching follows git-flow: `main` ← `develop` ← `feature/*`.

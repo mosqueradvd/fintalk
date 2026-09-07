@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from .pricing import Usage
+
 
 @dataclass
 class ToolCall:
@@ -22,3 +24,6 @@ class ChatResult:
     answer: str
     model: str
     tool_calls: list[ToolCall] = field(default_factory=list)
+    # Token spend for this turn. Internal observability (logs, eval harness,
+    # cost dashboards) — the UI doesn't need to surface it.
+    usage: Usage = field(default_factory=Usage)

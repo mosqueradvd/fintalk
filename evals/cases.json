@@ -1,0 +1,42 @@
+[
+  {
+    "name": "qtd_latest_value",
+    "question": "What is Imaginary Streaming Company's latest quarter-to-date total revenue estimate?",
+    "expect_tools": ["find_company", "get_qtd"],
+    "expect_value": {"kind": "qtd_latest", "ticker": "IGC", "kpi": "Total Revenue ($MM)"},
+    "no_tool_errors": true
+  },
+  {
+    "name": "history_latest_value",
+    "question": "How has CloudNine's total revenue trended over the last few quarters?",
+    "expect_tools": ["find_company", "get_history"],
+    "expect_value": {"kind": "history_latest", "ticker": "CLD9", "kpi": "Total Revenue ($MM)"},
+    "no_tool_errors": true
+  },
+  {
+    "name": "sector_listing",
+    "question": "Which companies do you cover in the Fintech sector?",
+    "expect_contains_any": ["FinX", "FINX"]
+  },
+  {
+    "name": "kpi_typo_recovery",
+    "question": "Show me the Total Revenu history for IGC.",
+    "comment": "Deliberate typo: 'Revenu'. IGC is already a ticker so find_company is optional; what matters is the agent recovers (via the tool error's suggestions) and reports the right latest value instead of giving up.",
+    "expect_tools": ["get_history"],
+    "expect_value": {"kind": "history_latest", "ticker": "IGC", "kpi": "Total Revenue ($MM)"}
+  },
+  {
+    "name": "unknown_company_no_fabrication",
+    "question": "What is Tesla's quarter-to-date revenue?",
+    "comment": "Tesla is not in the dataset. The agent must say so, not invent a number.",
+    "expect_contains_any": ["don't", "not", "no ", "couldn't", "isn't", "unable", "no match"],
+    "forbid_value": {"kind": "any_number_over", "value": 1.0}
+  },
+  {
+    "name": "ambiguous_company_only",
+    "question": "How is FinX doing this quarter?",
+    "comment": "No KPI named. Acceptable: resolve the company and either pick a headline KPI or ask which one. Must not error out or fabricate.",
+    "expect_tools": ["find_company"],
+    "no_tool_errors": true
+  }
+]

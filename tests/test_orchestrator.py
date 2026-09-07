@@ -37,6 +37,9 @@ async def test_happy_path_runs_tools_then_answers():
     assert all(tc.ok for tc in res.tool_calls)
     # list-returning tool: full result reaches the trace, not just item 0
     assert res.tool_calls[0].result[0]["ticker"] == "IGC"
+    # usage is tracked per turn (MockLLM reports zero tokens -> zero cost)
+    assert res.usage.llm_calls == 3
+    assert res.usage.cost_usd == 0.0
 
 
 async def test_tool_error_is_flagged_not_raised():

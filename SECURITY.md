@@ -255,7 +255,7 @@ convention into an enforced boundary.
 | LLM10 / LLM02 | `question` length cap | `api/main.py` | pydantic field validation |
 | MCP docs | "4 tools" → "5 tools" | `mcp_server/server.py` | — |
 
-Test suite: 14 passing (`pytest`).
+Test suite: 16 passing (`pytest`).
 
 ## Top deferred items (production hardening)
 
