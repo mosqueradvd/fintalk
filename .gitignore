@@ -30,6 +30,9 @@ yarn-error.log*
 logs/
 *.log
 
+# Salida generada por el harness de evals (se regenera con `make eval`)
+evals/last_run.json
+
 # Frontend
 node_modules/
 dist/

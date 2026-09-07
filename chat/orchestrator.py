@@ -16,6 +16,7 @@ from core.obs import get_logger, log_event, request_context
 from .config import CHAT_MODEL, MAX_TOOL_ITERATIONS, SYSTEM_PROMPT
 from .llm import AnthropicLLM, LLMClient
 from .mcp_client import extract_tool_payload, mcp_session, to_anthropic_tools
+from .pricing import Usage
 from .schemas import ChatResult, ToolCall
 
 _log = get_logger("chat")
@@ -37,28 +38,43 @@ def _unwrap(exc: BaseException) -> BaseException:
 async def run_chat(question: str, llm: LLMClient | None = None) -> ChatResult:
     with request_context():
         tool_calls: list[ToolCall] = []
+        usage = Usage()
         model = getattr(llm, "model", CHAT_MODEL)
         started = time.perf_counter()
         log_event(_log, "chat_started", question=question, model=model)
         try:
-            result = await _run(question, llm, tool_calls)
+            result = await _run(question, llm, tool_calls, usage)
             log_event(
                 _log,
                 "chat_completed",
                 model=result.model,
                 tools=len(result.tool_calls),
+                llm_calls=usage.llm_calls,
+                input_tokens=usage.input_tokens,
+                output_tokens=usage.output_tokens,
+                cost_usd=round(usage.cost_usd, 6),
                 latency_ms=round((time.perf_counter() - started) * 1000, 1),
             )
             return result
         except Exception as exc:  # noqa: BLE001 — deliberate catch-all boundary
             root = _unwrap(exc)
-            log_event(_log, "chat_failed", error=f"{type(root).__name__}: {root}")
+            log_event(
+                _log,
+                "chat_failed",
+                error=f"{type(root).__name__}: {root}",
+                cost_usd=round(usage.cost_usd, 6),
+            )
             _log.exception("chat_failed")
-            return ChatResult(answer=_FALLBACK, model=model, tool_calls=tool_calls)
+            return ChatResult(
+                answer=_FALLBACK, model=model, tool_calls=tool_calls, usage=usage
+            )
 
 
 async def _run(
-    question: str, llm: LLMClient | None, tool_calls: list[ToolCall]
+    question: str,
+    llm: LLMClient | None,
+    tool_calls: list[ToolCall],
+    usage: Usage,
 ) -> ChatResult:
     llm = llm or AnthropicLLM()
 
@@ -68,11 +84,18 @@ async def _run(
 
         for _ in range(MAX_TOOL_ITERATIONS):
             resp = llm.create(system=SYSTEM_PROMPT, messages=messages, tools=tools)
+            if resp.usage is not None:
+                usage.add(
+                    llm.model, resp.usage.input_tokens, resp.usage.output_tokens
+                )
             messages.append({"role": "assistant", "content": resp.assistant_content})
 
             if resp.stop_reason != "tool_use":
                 return ChatResult(
-                    answer=resp.text, model=llm.model, tool_calls=tool_calls
+                    answer=resp.text,
+                    model=llm.model,
+                    tool_calls=tool_calls,
+                    usage=usage,
                 )
 
             results_block = []
@@ -107,4 +130,5 @@ async def _run(
         "Try a more specific question.",
         model=llm.model,
         tool_calls=tool_calls,
+        usage=usage,
     )
