@@ -8,6 +8,8 @@ can consume.
 Take-home for the AI Infrastructure Senior Engineer role at YipitData.
 Assignment statement: [`docs/take-home-assignment.md`](docs/take-home-assignment.md).
 
+<img width="300" height="600" alt="image" src="https://github.com/user-attachments/assets/0b758c58-83ce-4af7-9d30-f949ee9686a4" />
+
 ---
 
 ## Architecture
